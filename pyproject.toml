@@ -10,3 +10,8 @@ dependencies = [
     "pytest>=9.1.1",
     "python-dotenv>=1.2.3",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["live: needs network and API keys (not run by default)"]
+addopts = "-m 'not live'"
