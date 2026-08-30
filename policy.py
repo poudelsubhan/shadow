@@ -21,6 +21,7 @@ ESCALATE_INSTRUCTION = "Tell the caller you're connecting them to a supervisor w
 class CallState:
     call_id: str
     contact_name: str = ""
+    live: bool = False  # reach_person confirmed a human, not a machine
     verified: bool = False
     audit_violations: list[Verdict] = field(default_factory=list)
     preempts: list[Verdict] = field(default_factory=list)

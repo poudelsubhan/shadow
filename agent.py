@@ -140,6 +140,7 @@ def on_reach_person(call: guava.Call, outcome: str) -> None:
         return
 
     call.set_variable("stage", "verify")
+    shadow.on_live(call)
     shadow.on_task(call, "verify", "set")
     call.set_task(
         "verify",

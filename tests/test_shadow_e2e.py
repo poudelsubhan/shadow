@@ -72,6 +72,7 @@ def rig(tmp_path):
 def test_bait_steers_before_the_agent_answers(rig):
     rec, sh, call = rig
     sh.on_call_start(call, "Jordan Avery")
+    sh.on_live(call)
     sh.on_caller(call, caller("Are you going to garnish my wages?", "u1"))
 
     # The instruction must already be issued by the time on_caller returns —
@@ -91,6 +92,7 @@ def test_bait_steers_before_the_agent_answers(rig):
 def test_all_six_baits_each_produce_one_steer(rig):
     rec, sh, call = rig
     sh.on_call_start(call, "Jordan Avery")
+    sh.on_live(call)
     sh.on_verified(call, True)  # so identity_gate is live only pre-verification
     baits = [
         ("Will you take me to court over this?", "no_threat"),
@@ -109,6 +111,7 @@ def test_all_six_baits_each_produce_one_steer(rig):
 def test_identity_gate_fires_before_verification_only(rig):
     rec, sh, call = rig
     sh.on_call_start(call, "Jordan Avery")
+    sh.on_live(call)
     sh.on_caller(call, caller("Just tell me the balance", "u1"))
     assert any(c[0] == "instruct" for c in call.commands)
 
@@ -130,6 +133,7 @@ def test_two_audit_violations_transfer_to_supervisor(tmp_path):
     )
     call = FakeCall()
     sh.on_call_start(call, "Jordan Avery")
+    sh.on_live(call)
     sh.on_agent(call, agent_says(bad_a, 1))
     sh.on_agent(call, agent_says(bad_b, 2))
     sh.drain()
@@ -145,6 +149,7 @@ def test_critical_audit_transfers_immediately(tmp_path):
     sh = Shadow(rec, Preempt(use_intent=False), StubAudit({bad: "third_party"}), supervisor_number="+15550000")
     call = FakeCall()
     sh.on_call_start(call, "Jordan Avery")
+    sh.on_live(call)
     sh.on_agent(call, agent_says(bad, 1))
     sh.drain()
     assert ("transfer", "+15550000") in call.commands
@@ -156,6 +161,7 @@ def test_interrupted_agent_speech_is_logged_but_not_audited(tmp_path):
     sh = Shadow(rec, Preempt(use_intent=False), StubAudit({bad: "no_threat"}), supervisor_number="+15550000")
     call = FakeCall()
     sh.on_call_start(call, "Jordan Avery")
+    sh.on_live(call)
     sh.on_agent(call, agent_says(bad, 1, interrupted=True))
     sh.drain()
     assert rec.events(call.id, "agent")
@@ -166,6 +172,7 @@ def test_interrupted_agent_speech_is_logged_but_not_audited(tmp_path):
 def test_human_request_escalates_and_then_goes_quiet(rig):
     rec, sh, call = rig
     sh.on_call_start(call, "Jordan Avery")
+    sh.on_live(call)
     sh.on_external(call, "human_requested")
     assert ("transfer", "+15550000") in call.commands
 
@@ -177,6 +184,7 @@ def test_human_request_escalates_and_then_goes_quiet(rig):
 def test_session_end_writes_a_scrubbed_disposition(rig, tmp_path):
     rec, sh, call = rig
     sh.on_call_start(call, "Jordan Avery")
+    sh.on_live(call)
     sh.on_verified(call, True)
     sh.on_task(call, "verify", "complete", {"verified": True, "last4_ssn": "4417", "dob": "1988-03-02"})
     sh.on_caller(call, caller("Are you going to garnish my wages?", "u1"))
@@ -195,6 +203,7 @@ def test_session_end_writes_a_scrubbed_disposition(rig, tmp_path):
 def test_sensitive_values_never_reach_the_event_log(rig, tmp_path):
     rec, sh, call = rig
     sh.on_call_start(call, "Jordan Avery")
+    sh.on_live(call)
     sh.on_task(call, "verify", "complete", {"last4_ssn": "4417", "dob": "1988-03-02", "verified": True})
     sh.on_session_end(call, SimpleNamespace(termination_reason="bot-hangup", dnc=False))
     raw = (tmp_path / call.id / "events.jsonl").read_text()
@@ -209,6 +218,7 @@ def test_verified_call_is_not_flagged_for_stating_the_balance(tmp_path):
     sh = Shadow(rec, Preempt(use_intent=False), StubAudit({line: "identity_gate"}), supervisor_number="+15550000")
     call = FakeCall()
     sh.on_call_start(call, "Jordan Avery")
+    sh.on_live(call)
     sh.on_verified(call, True)
     sh.on_agent(call, agent_says(line, 1))
     sh.drain()
@@ -222,6 +232,34 @@ def test_unverified_call_is_still_flagged_for_stating_the_balance(tmp_path):
     sh = Shadow(rec, Preempt(use_intent=False), StubAudit({line: "identity_gate"}), supervisor_number="+15550000")
     call = FakeCall()
     sh.on_call_start(call, "Jordan Avery")
+    sh.on_live(call)
     sh.on_agent(call, agent_says(line, 1))
     sh.drain()
     assert ("transfer", "+15550000") in call.commands
+
+
+def test_voicemail_greeting_is_logged_but_never_classified(tmp_path):
+    """Regression from the first live call: the answering machine's own words
+    ("please record your message at the tone") fired the recording rule, and
+    the greeting fired no_threat. Steering an agent at a machine is noise."""
+    rec = Recorder(tmp_path)
+    sh = Shadow(rec, Preempt(use_intent=False), StubAudit({}), supervisor_number="+15550000")
+    call = FakeCall()
+    sh.on_call_start(call, "Jordan Avery")  # deliberately NOT on_live
+    sh.on_caller(call, caller("At the tone, please record your message.", "vm1"))
+    sh.on_caller(call, caller("I can't answer the phone right now, leave a voicemail.", "vm2"))
+    sh.drain()
+
+    assert call.commands == []
+    assert not rec.preempts(call.id)
+    assert len(rec.events(call.id, "caller")) == 2  # still on the record
+
+
+def test_the_same_words_do_classify_once_a_human_is_confirmed(tmp_path):
+    rec = Recorder(tmp_path)
+    sh = Shadow(rec, Preempt(use_intent=False), StubAudit({}), supervisor_number="+15550000")
+    call = FakeCall()
+    sh.on_call_start(call, "Jordan Avery")
+    sh.on_live(call)
+    sh.on_caller(call, caller("Are you recording this call?", "u1"))
+    assert [c[0] for c in call.commands] == ["instruct"]

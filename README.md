@@ -100,13 +100,19 @@ call and never once conceded one.
 | 6 | `disposition.json` per call, sensitive fields omitted | ✅ asserted by test |
 | 7 | dashboard renders live, no manual refresh | ✅ 800 ms poll |
 | 8 | three personas run end to end | ✅ table above |
-| 9 | warm handoff (stretch) | ⬜ cut — Phase 3 gate landed too late |
+| 9 | warm handoff (stretch) | ⚠️ code + 8 tests; no live two-phone bridge |
 
-Every row above is evidenced by an automated run or a test. **No live phone
-call has been placed yet** — `DEMO_PHONE` and `SUPERVISOR_NUMBER` are still
-unset. The roleplay harness drives the same `agent.py` handlers and the same
-shadow wiring the phone path uses, so criteria 3 and 5 are proven in code but
-not yet on a handset.
+One live outbound call was placed (`e423e153ff85d2ad`): it rang, `reach_person`
+detected voicemail, the agent left the callback message, and the disposition
+was written. **It went to voicemail, so the baits were never spoken to a live
+human** — criteria 3 and 5 are proven by the roleplay runs and unit tests
+driving the same handlers, not yet by a person reading baits down a phone.
+
+Criterion 9 ships as code and tests only. `guava numbers buy` needs a
+`guava.toml` from `guava create --direction outbound`, which is gated behind
+the outbound compliance form, so there is no second number to place the
+briefing call from. `handoff.start()` returns `False` without one and
+escalation falls back to the direct transfer.
 
 ## Artifacts
 

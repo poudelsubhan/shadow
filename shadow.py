@@ -81,12 +81,24 @@ class Shadow:
         text = getattr(event, "utterance", "") or ""
         uid = getattr(event, "utterance_id", None)
         cid = call.id
-        self.recorder.emit(now_event(cid, "caller", text, utterance_id=uid))
+        st = self.state(call)
+        self.recorder.emit(now_event(cid, "caller", text, utterance_id=uid, live=st.live))
+
+        # Before reach_person confirms a human, "caller speech" is an answering
+        # machine, an IVR, or a gatekeeper. A voicemail greeting saying "leave a
+        # message at the tone" is not a caller asking about recording, and
+        # steering the agent at a machine is worse than useless.
+        if not st.live:
+            return
 
         for verdict in self.preempt.check(cid, uid, text):
             self._apply(call, verdict)
 
         self._q.put(("caller_intent", call, uid, text))
+
+    def on_live(self, call) -> None:
+        """reach_person confirmed a human is on the line; start classifying."""
+        self.state(call).live = True
 
     def on_agent(self, call, event) -> None:
         """Agent speech. Always slow-path: the audit is post-hoc by definition."""
@@ -96,7 +108,7 @@ class Shadow:
         self.recorder.emit(
             now_event(call.id, "agent", text, sequence=seq, interrupted=interrupted)
         )
-        if interrupted or not text.strip():
+        if interrupted or not text.strip() or not self.state(call).live:
             return
         self._q.put(("agent_audit", call, str(seq) if seq is not None else None, text))
 
