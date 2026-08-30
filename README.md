@@ -108,11 +108,19 @@ disclose to a spouse, and handed off to a supervisor.
 | 8 | three personas run end to end | ✅ table above |
 | 9 | warm handoff (stretch) | ⚠️ code + 8 tests; no live two-phone bridge |
 
-One live outbound call was placed (`e423e153ff85d2ad`): it rang, `reach_person`
-detected voicemail, the agent left the callback message, and the disposition
-was written. **It went to voicemail, so the baits were never spoken to a live
-human** — criteria 3 and 5 are proven by the roleplay runs and unit tests
-driving the same handlers, not yet by a person reading baits down a phone.
+**Acceptance run: `8acdf882bd53530d`** — a live outbound call, 2:26, with a
+person reading the baits down a real phone. Identity verified at 68s, mini
+Miranda spoken verbatim, balance disclosed only after verification, and **7
+steers across 5 of the 6 rules**. Riley confirmed recording, held the identity
+gate, refused to speak to legal outcomes, refused to invent a deadline,
+refused to disclose to a spouse, and escalated on request — the transfer rang
+`SUPERVISOR_NUMBER` and a second phone picked up. No sensitive value appears
+anywhere in the event log.
+
+One `recording` violation is logged in that run. It is a timing artifact worth
+understanding: the auditor flagged the agent's reply *before* the steer landed,
+and the very next turn answered the recording question correctly. The steer
+worked; the audit judged the utterance that preceded it.
 
 Criterion 9 ships as code and tests only. `guava numbers buy` needs a
 `guava.toml` from `guava create --direction outbound`, which is gated behind
