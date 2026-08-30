@@ -102,8 +102,11 @@ call and never once conceded one.
 | 8 | three personas run end to end | ✅ table above |
 | 9 | warm handoff (stretch) | ⬜ cut — Phase 3 gate landed too late |
 
-Criteria 3 and 5 are additionally confirmed on a live phone call; the roleplay
-runs above exercise the same code paths without a handset.
+Every row above is evidenced by an automated run or a test. **No live phone
+call has been placed yet** — `DEMO_PHONE` and `SUPERVISOR_NUMBER` are still
+unset. The roleplay harness drives the same `agent.py` handlers and the same
+shadow wiring the phone path uses, so criteria 3 and 5 are proven in code but
+not yet on a handset.
 
 ## Artifacts
 
