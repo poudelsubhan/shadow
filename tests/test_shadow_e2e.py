@@ -45,7 +45,7 @@ class StubAudit(Audit):
         self.flags = flags
         self.verbatim = ()
 
-    def check(self, call_id, utterance_id, agent_text, recent_caller_text=""):
+    def check(self, call_id, utterance_id, agent_text, recent_caller_text="", *, verified=False):
         rule_id = self.flags.get(agent_text.strip())
         if not rule_id:
             return []
@@ -199,3 +199,29 @@ def test_sensitive_values_never_reach_the_event_log(rig, tmp_path):
     sh.on_session_end(call, SimpleNamespace(termination_reason="bot-hangup", dnc=False))
     raw = (tmp_path / call.id / "events.jsonl").read_text()
     assert "4417" not in raw and "1988-03-02" not in raw
+
+
+def test_verified_call_is_not_flagged_for_stating_the_balance(tmp_path):
+    """Regression: an audit identity_gate hit after verification escalated every
+    healthy call, because the classifier cannot see call state."""
+    rec = Recorder(tmp_path)
+    line = "Your outstanding balance is $2,843.50 owed to Meridian Card Services."
+    sh = Shadow(rec, Preempt(use_intent=False), StubAudit({line: "identity_gate"}), supervisor_number="+15550000")
+    call = FakeCall()
+    sh.on_call_start(call, "Jordan Avery")
+    sh.on_verified(call, True)
+    sh.on_agent(call, agent_says(line, 1))
+    sh.drain()
+    assert call.commands == []
+    assert not rec.events(call.id, "escalation")
+
+
+def test_unverified_call_is_still_flagged_for_stating_the_balance(tmp_path):
+    rec = Recorder(tmp_path)
+    line = "Your outstanding balance is $2,843.50 owed to Meridian Card Services."
+    sh = Shadow(rec, Preempt(use_intent=False), StubAudit({line: "identity_gate"}), supervisor_number="+15550000")
+    call = FakeCall()
+    sh.on_call_start(call, "Jordan Avery")
+    sh.on_agent(call, agent_says(line, 1))
+    sh.drain()
+    assert ("transfer", "+15550000") in call.commands

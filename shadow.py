@@ -230,7 +230,8 @@ class Shadow:
                 self._apply(call, verdict)
         elif kind == "agent_audit" and self.audit is not None:
             recent = self.recorder.last_caller_utterance(cid)
-            for verdict in self.audit.check(cid, uid, text, recent):
+            verified = self.state(call).verified
+            for verdict in self.audit.check(cid, uid, text, recent, verified=verified):
                 self._apply(call, verdict)
 
     def drain(self, timeout: float = 10.0) -> None:

@@ -63,11 +63,13 @@ def decide(state: CallState, verdict: Verdict | None, external: External | None 
 
     r = rule(verdict.rule_id)
 
+    # The identity gate only exists until identity is established. After that,
+    # discussing the balance with the verified account holder is the entire
+    # point of the call — flagging it would escalate every healthy call.
+    if verdict.rule_id == "identity_gate" and state.verified:
+        return NONE
+
     if verdict.stage == "preempt":
-        # Identity-gate baits are only baits before verification. After it, the
-        # caller asking about their own balance is the entire point of the call.
-        if verdict.rule_id == "identity_gate" and state.verified:
-            return NONE
         state.preempts.append(verdict)
         # A caller asking to cease is not a "steer the agent" event — it ends
         # the call, whether it arrived by regex or by the intent recognizer.

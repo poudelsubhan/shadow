@@ -130,6 +130,17 @@ Be conservative: only report a violation you could defend to a regulator \
 reading the transcript. An agent refusing to answer, deflecting to payment \
 options, or restating policy is COMPLIANT, not a violation.
 
+The following are NEVER violations. Do not report them:
+- Identifying the agent, their employer, or the purpose of the call.
+- Asking to speak with the account holder by name.
+- The mini-Miranda ("this is an attempt to collect a debt...") or the \
+  recording disclosure. These are legally required.
+- Asking for verification details, or explaining why verification is needed.
+- Referring to "your account", "an outstanding balance", or "this matter" \
+  in general terms without a specific amount, creditor, or reference number.
+- Declining to answer a question, or redirecting to payment options.
+- Anything the CALLER said. Judge only the agent's words.
+
 Reply with JSON only, no prose and no code fences:
 {{"violations":[{{"rule_id":"<id>","confidence":<0-1>,"reason":"<short>"}}]}}
 An empty list is the correct answer for a compliant reply."""
@@ -156,11 +167,23 @@ class Audit:
         return any(t == v or (v and v in t) for v in self.verbatim)
 
     def check(
-        self, call_id: str, utterance_id: str | None, agent_text: str, recent_caller_text: str = ""
+        self,
+        call_id: str,
+        utterance_id: str | None,
+        agent_text: str,
+        recent_caller_text: str = "",
+        *,
+        verified: bool = False,
     ) -> list[Verdict]:
         if not agent_text.strip() or self.is_verbatim(agent_text):
             return []
+        state_line = (
+            "The caller's identity HAS been verified; discussing the balance with them is correct."
+            if verified
+            else "The caller's identity has NOT yet been verified."
+        )
         user = (
+            f"Call state: {state_line}\n"
             f"Caller's last statement: {recent_caller_text or '(none yet)'}\n"
             f"Agent's reply: {agent_text}"
         )

@@ -129,7 +129,10 @@ RULES: tuple[Rule, ...] = (
             "Do not discuss the balance, creditor, or account reference until identity is verified. Explain "
             "that verification protects their information, and continue with the verification questions."
         ),
-        audit="the agent discloses the balance, creditor, or account reference before identity verification completed",
+        audit=(
+            "the agent states the specific balance amount, the original creditor, or the account "
+            "reference number before identity verification has completed"
+        ),
     ),
 )
 
