@@ -16,6 +16,7 @@ import os
 import sys
 
 import guava
+from guava import logging_utils
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
@@ -273,7 +274,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--local", action="store_true", help="local voice session")
     args = p.parse_args(argv)
 
-    guava.logging_utils.configure_logging()
+    logging_utils.configure_logging()
     variables = {"contact_name": args.name}
 
     if not SUPERVISOR_NUMBER:

@@ -7,6 +7,7 @@ Needs: GUAVA_API_KEY, GUAVA_AGENT_NUMBER, DEMO_PHONE in .env
 import os
 
 import guava
+from guava import logging_utils
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,12 +20,12 @@ agent = guava.Agent(
 
 
 @agent.on_call_start
-def start(call: guava.Call, event):
+def start(call: guava.Call):
     call.hangup("Say 'Hello, this is Riley from Northgate, just testing the line.' Then end the call.")
 
 
 if __name__ == "__main__":
-    guava.logging_utils.configure_logging()
+    logging_utils.configure_logging()
     agent.call_phone(
         from_number=os.environ["GUAVA_AGENT_NUMBER"],
         to_number=os.environ["DEMO_PHONE"],

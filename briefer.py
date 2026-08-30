@@ -14,6 +14,7 @@ import os
 import sys
 
 import guava
+from guava import logging_utils
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
@@ -94,7 +95,7 @@ def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--test", action="store_true", help="place a canned briefing call")
     args = p.parse_args()
-    guava.logging_utils.configure_logging()
+    logging_utils.configure_logging()
 
     if not args.test:
         p.print_help()
