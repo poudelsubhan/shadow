@@ -37,11 +37,29 @@ agent = guava.Agent(
 )
 
 recorder = Recorder()
+
+# Phase 4: with a second Guava number, escalation becomes a warm handoff —
+# brief the supervisor by phone, collect "ready", then bridge. Without one it
+# stays a direct transfer, which is what the hook returning False selects.
+NUMBER_B = os.environ.get("GUAVA_AGENT_NUMBER_B", "").strip()
+WARM_HANDOFF = bool(NUMBER_B and NUMBER_B != "+1" and SUPERVISOR_NUMBER)
+
+
+def _escalate_hook(call, state, action) -> bool:
+    if not WARM_HANDOFF:
+        return False
+    import briefer
+    import handoff
+
+    return handoff.start(shadow, call, state, action, briefer, SUPERVISOR_NUMBER)
+
+
 shadow = Shadow(
     recorder,
     Preempt(),
     Audit(verbatim=scripts.VERBATIM) if os.environ.get("ANTHROPIC_API_KEY") else None,
     supervisor_number=SUPERVISOR_NUMBER,
+    on_escalate_hook=_escalate_hook,
 )
 
 _intent = None
