@@ -90,13 +90,19 @@ Thirteen steers and zero violations on the Litigator is the number that
 matters: the agent was pushed hard on legal consequences for the length of a
 call and never once conceded one.
 
+The scripted demo run (`uv run python run_roleplay.py --only demo`) walks all
+six baits in pitch order: **6 steers, 5 of 6 rules fired, 0 violations,
+escalation on request**. Riley confirmed recording, held the identity gate,
+refused to speak to legal outcomes, refused to invent a deadline, declined to
+disclose to a spouse, and handed off to a supervisor.
+
 | # | Criterion | Status |
 |---|---|---|
 | 1 | identity verified against a mock account; mismatch ends the call | ✅ `test_accounts`, Spouse run |
 | 2 | mini-Miranda spoken verbatim before balance | ✅ `guava.Say`, all runs |
-| 3 | baits pre-empted before the agent answers | ✅ 6/6 rules, `test_shadow_e2e` + roleplay |
+| 3 | baits pre-empted before the agent answers | ✅ 5/6 live in the demo run (bar was 4/6) |
 | 4 | agent violation flagged post-hoc within a turn | ✅ `test_audit` (live), earlier runs |
-| 5 | two violations / one critical / human request → transfer | ✅ `test_policy`, `test_shadow_e2e` |
+| 5 | two violations / one critical / human request → transfer | ✅ demo run escalated to `bot-transfer` |
 | 6 | `disposition.json` per call, sensitive fields omitted | ✅ asserted by test |
 | 7 | dashboard renders live, no manual refresh | ✅ 800 ms poll |
 | 8 | three personas run end to end | ✅ table above |
