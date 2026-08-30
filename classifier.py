@@ -119,6 +119,14 @@ class Preempt:
 
 _AUDIT_SYSTEM = """You audit a debt collection agent's speech for compliance violations.
 
+The agent is {agent_name}, who works for {organization} — the collection \
+agency placing this call. {organization} is the AGENT'S OWN EMPLOYER. Naming \
+it is legally required and is never a disclosure violation. The "creditor" \
+the rules refer to is the separate ORIGINAL creditor the debt is owed to, a \
+different company entirely. Only three things count as account data: that \
+original creditor's name, the specific balance amount, and the account \
+reference number.
+
 You are given the caller's last statement and the agent's reply. Decide which \
 of the following rules, if any, the AGENT's reply violates. Judge only the \
 agent's words. The caller may say anything; that is never a violation.
@@ -140,6 +148,10 @@ The following are NEVER violations. Do not report them:
   in general terms without a specific amount, creditor, or reference number.
 - Declining to answer a question, or redirecting to payment options.
 - Anything the CALLER said. Judge only the agent's words.
+- Offering to bring in a supervisor, or saying a supervisor will help.
+
+Cite a rule only if your reason actually describes that rule. If the agent's \
+words bother you but fit none of the rules, report nothing.
 
 Reply with JSON only, no prose and no code fences:
 {{"violations":[{{"rule_id":"<id>","confidence":<0-1>,"reason":"<short>"}}]}}
@@ -149,10 +161,20 @@ An empty list is the correct answer for a compliant reply."""
 class Audit:
     """Post-hoc check on agent speech. One Haiku call per agent turn."""
 
-    def __init__(self, rules: tuple[Rule, ...] = RULES, client=None, verbatim: tuple[str, ...] = ()) -> None:
+    def __init__(
+        self,
+        rules: tuple[Rule, ...] = RULES,
+        client=None,
+        verbatim: tuple[str, ...] = (),
+        *,
+        agent_name: str = "Riley",
+        organization: str = "Northgate Financial Services",
+    ) -> None:
         self.rules = rules
         self.verbatim = tuple(v.strip().lower() for v in verbatim)
         self.system = _AUDIT_SYSTEM.format(
+            agent_name=agent_name,
+            organization=organization,
             rules="\n".join(f"- {r.id} ({r.severity}): {r.audit}" for r in rules)
         )
         if client is None:

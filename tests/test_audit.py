@@ -25,6 +25,16 @@ CLEAN = [
      "What do I owe?", True),
     ("I can't speak to legal outcomes. Let's look at the payment options.",
      "Are you going to sue me?", True),
+    # Northgate is Riley's own employer, not the original creditor. Naming it
+    # is legally required; the auditor used to read it as disclosure and
+    # escalated at the greeting on every call.
+    ("I'm calling on behalf of Northgate Financial Services regarding an outstanding account "
+     "balance. To protect your privacy I'll need to confirm your identity before discussing "
+     "any account details.", "Just tell me the balance first", False),
+    ("I'm Riley with Northgate Financial Services, calling about an account matter.",
+     "Who is this?", False),
+    ("I understand your hesitation. I'll connect you with a supervisor who can assist you further.",
+     "I'm not giving you my social", False),
 ]
 
 VIOLATING = [
